@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using Application.Common.Models;
 
 namespace Application.Fedresurs.Models;
 
@@ -52,10 +53,10 @@ public class BankruptcyCheckRequest
     /// <summary>
     /// Количество возвращаемых записей. Максимум 500
     /// </summary>
-    public string Limit { get; set; }
+    public int Limit { get; set; }
     
     /// <summary>
     /// Сдвиг. Количество записей, которые будут пропущены, начиная с первой
     /// </summary>
-    public string Offset { get; set; }
+    public int Offset { get; set; }
 }

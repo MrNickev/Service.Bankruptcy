@@ -1,4 +1,4 @@
-﻿namespace Application.Fedresurs.Models;
+﻿namespace Application.Common.Models;
 
 public enum BankruptType
 {

@@ -5,5 +5,10 @@
 /// </summary>
 public enum MessageType
 {
-    
+    Other,
+    ArbitalDecree,
+    Auction,
+    Meeting,
+    MeetingResult,
+    TradeResult
 }

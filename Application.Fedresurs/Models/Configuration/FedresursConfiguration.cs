@@ -19,5 +19,9 @@ public class FedresursConfiguration
     [JsonProperty(nameof(Password))]
     public string Password { get; set; }
     
+    /// <summary>
+    /// Адрес Федресурс API
+    /// </summary>
+    [JsonProperty(nameof(Host))]
     public string Host { get; set; }
 }

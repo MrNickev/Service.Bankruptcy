@@ -1,4 +1,5 @@
-﻿using Application.Common.Models;
+﻿using System.Text.Json.Serialization;
+using Application.Common.Models;
 
 namespace Application.Fedresurs.Models;
 
@@ -7,14 +8,21 @@ namespace Application.Fedresurs.Models;
 /// </summary>
 public class BankruptCheckResult
 {
-    public BankruptCheckResult(BankruptStatus status)
+    public BankruptCheckResult(BankruptStatus status, string serviceName)
     {
         Status = status;
+        ServiceName = serviceName;
     }
 
     /// <summary>
     /// Статус банкрота. Подробнее: <see cref="BankruptStatus"/>
     /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public BankruptStatus Status { get; set; }
+    
+    /// <summary>
+    /// Имя сервиса, в котором происходила проверка
+    /// </summary>
+    public string ServiceName { get; set; }
 
 }

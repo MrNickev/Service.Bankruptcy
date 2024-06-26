@@ -5,15 +5,19 @@ using Application.Fedresurs.Implementations;
 using Application.Fedresurs.Models.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+
 namespace Application.Fedresurs;
 
 public static class FedresursRegisterServices
 {
+    /// <summary>
+    /// Регистрация сервисов модуля Федресурс'а
+    /// </summary>
+    /// <param name="services"></param>
     public static void Register(IServiceCollection services)
     {
         services.RegisterConfiguration<FedresursConfiguration>();
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IBankruptcyCheckService, BankruptcyCheckService>();
-        
+        services.AddScoped<IBankruptcyCheckService, FedresursBankruptcyCheckService>();
     }
 }

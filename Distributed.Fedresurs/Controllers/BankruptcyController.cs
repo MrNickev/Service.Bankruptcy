@@ -6,19 +6,27 @@ using Microsoft.AspNetCore.Mvc;
 namespace Distributed.Fedresurs.Controllers;
 
 /// <summary>
-/// Контроллер проверки на банкротство на Федресурсе
+/// Контроллер проверки на банкротство
 /// </summary>
-/// <param name="bankruptcyCheckService">Сервис проверки на банкротство</param>
+/// <param name="bankruptcyCheckServices">Сервис проверки на банкротство</param>
 [ApiController]
-[Route("fedresurs/bankrutcy")]
-public class BankruptcyController(IBankruptcyCheckService bankruptcyCheckService) : ControllerBase
+[Route("bankruptcy")]
+public class BankruptcyController(IEnumerable<IBankruptcyCheckService> bankruptcyCheckServices) : ControllerBase
 {
+    
+    /// <summary>
+    /// Проверка на банкротство на все сервисах првоерки на банкротство
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
     [HttpGet]
     [Route("")]
-    public async Task<BankruptCheckResult> Check([FromQuery] BankruptcyCheckRequest request)
+    public IActionResult Check([FromQuery] BankruptcyCheckRequest request)
     {
-        
-        return await bankruptcyCheckService.Check(request);
+        var tasks = bankruptcyCheckServices.Select(service => service.Check(request)).ToArray();
+        var results = Task.WhenAll(tasks);
+
+        return Ok(results.Result.ToList());
     }
     
     
