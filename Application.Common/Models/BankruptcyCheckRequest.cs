@@ -1,10 +1,9 @@
 ﻿using System.Text.Json.Serialization;
-using Application.Common.Models;
 
-namespace Application.Fedresurs.Models;
+namespace Application.Common.Models;
 
 /// <summary>
-/// Модель 
+/// Модель запроса
 /// </summary>
 public class BankruptcyCheckRequest
 {
@@ -13,7 +12,7 @@ public class BankruptcyCheckRequest
     /// </summary>
     [JsonPropertyName("type")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public BankruptType Type { get; set; }
+    public BankruptType? Type { get; set; }
     
     /// <summary>
     /// Guid в системе Фересурс

@@ -1,4 +1,6 @@
 ﻿using Application.Common.Astractions;
+using Application.Common.Exceptions;
+using Application.Common.Models;
 using Application.Fedresurs.Abstractions;
 using Application.Fedresurs.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -18,15 +20,30 @@ public class BankruptcyController(IEnumerable<IBankruptcyCheckService> bankruptc
     /// Проверка на банкротство на все сервисах првоерки на банкротство
     /// </summary>
     /// <param name="request"></param>
-    /// <returns></returns>
+    /// <returns>Результаты проверок в формате массива объктов </returns>
+    /// <response code="200">Успешное выполнение</response>
+    /// <response code="400">Запрос не выполнен по причине некорректных данных</response>
+    /// <response code="500">Внутренняя ошибка сервера</response>
     [HttpGet]
     [Route("")]
     public IActionResult Check([FromQuery] BankruptcyCheckRequest request)
     {
-        var tasks = bankruptcyCheckServices.Select(service => service.Check(request)).ToArray();
-        var results = Task.WhenAll(tasks);
+        try
+        {
+            var tasks = bankruptcyCheckServices.Select(service => service.Check(request)).ToArray();
+            var results = Task.WhenAll(tasks);
+            return Ok(results.Result.ToList());
+        }
+        catch (Exception e)
+        {
+            if (e is RequestException)
+            {
+                return StatusCode(((RequestException)e).StatusCode, "Ошибка запроса на сторонний сервис:" + e.Message);
+            }
 
-        return Ok(results.Result.ToList());
+            return StatusCode(500, e.Message);
+        }
+        
     }
     
     

@@ -44,8 +44,8 @@ public class Message
     /// Тип сообщения
     /// </summary>
     [JsonPropertyName("type")]
-    // [Newtonsoft.Json.JsonConverter(typeof(JsonStringEnumConverter))]
-    public string? Type { get; set; }
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public MessageType Type { get; set; }
     
     /// <summary>
     /// Причина блокировки. Возвращается только если сообщение заблокировано

@@ -6,9 +6,9 @@ namespace Application.Fedresurs.Models;
 /// <summary>
 /// Результат проверки на банкрота
 /// </summary>
-public class BankruptCheckResult
+public class BankruptcyCheckResult
 {
-    public BankruptCheckResult(BankruptStatus status, string serviceName)
+    public BankruptcyCheckResult(BankruptStatus status, string serviceName)
     {
         Status = status;
         ServiceName = serviceName;
