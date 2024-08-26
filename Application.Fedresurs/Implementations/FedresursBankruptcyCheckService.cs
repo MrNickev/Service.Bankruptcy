@@ -6,7 +6,6 @@ using Application.Common.Models;
 using Application.Fedresurs.Abstractions;
 using Application.Fedresurs.Models;
 using Application.Fedresurs.Models.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace Application.Fedresurs.Implementations;
 
@@ -54,35 +53,52 @@ public class FedresursBankruptcyCheckService : IBankruptcyCheckService
         var bankrupt = bankrupts.Data[0];
         var finishedBankruptcyMessages = await FindMessages(bankrupt.Guid, new []
         {
-            "Receivership",
-            "PropertySale",
-            "DebtRestructuringComplete",
+            "LegalCaseEnd",
             "PropertySaleComplete"
         });
         
         //проверяем есть ли сообщения об окончании банкротства и актуальны ли они
-        if (finishedBankruptcyMessages.Total > 0 && finishedBankruptcyMessages.Data.Any(m => m.DatePublish > DateTime.Today.AddYears(3)))
+        if (finishedBankruptcyMessages.Total > 0 && finishedBankruptcyMessages.Data.Any(m => m.DatePublish > DateTime.Today.AddYears(-3)))
         {
             return new BankruptcyCheckResult(BankruptStatus.FinishedBankruptcy, this.GetType().Name); 
         }
 
+        
+        var refusalBankruptcyMessages = await FindMessages(bankrupt.Guid, new[]
+        {
+            "BankruptcyRefusal",
+            "ObligationsDischargeRefusal"
+        });
+        
+        if (refusalBankruptcyMessages.Total > 0 && refusalBankruptcyMessages.Data.Any(m => m.DatePublish > DateTime.Today.AddYears(-3)))
+        {
+            return new BankruptcyCheckResult(BankruptStatus.RefusalBankruptcy, this.GetType().Name); 
+        }
+        
+
         var proceduralBankruptcyMessages = await FindMessages(bankrupt.Guid, new[]
         {
-            ""
+            "Receivership",
+            "DebtRestructuring",
+            "PropertySale",
         });
 
-        //проверяем есть ли сообщения о банкротстве и актуальны ли они
-        if (proceduralBankruptcyMessages.Total > 0 && proceduralBankruptcyMessages.Data.Any(m => m.DatePublish > DateTime.Today.AddYears(3)))
+        var proceduralBankruptcyReports = await FindReports(bankrupt.Guid, new[]
+        {
+            "Tender",
+            "Watching",
+            "CitizenAssetsDisposal",
+            "CitizenDebtRestructuring"
+        });
+
+        if (proceduralBankruptcyMessages.Total > 0 || proceduralBankruptcyReports.Total > 0)
         {
             return new BankruptcyCheckResult(BankruptStatus.ProceduralBankruptcy, GetType().Name);
         }
-        
-        
-        //раз клиент есть в базе, но нет сообщений по нему, то делаем ему статус потенциального банкрота
-        return new BankruptcyCheckResult(BankruptStatus.PossibleBankruptcy, GetType().Name);
 
+        return new BankruptcyCheckResult(BankruptStatus.NotBankrupt, GetType().Name);
     }
-
+    
     /// <summary>
     /// Поиск банкрота 
     /// </summary>
@@ -145,6 +161,35 @@ public class FedresursBankruptcyCheckService : IBankruptcyCheckService
             throw new RequestException((int)response.StatusCode, await response.Content.ReadAsStringAsync());
         }
         var responseContent = await response.Content.ReadFromJsonAsync<PageData<Message>>();
+        return responseContent;
+    }
+
+    /// <summary>
+    /// Найти отчеты по банкроту
+    /// </summary>
+    /// <param name="bankruptGuid">GUID банкрота</param>
+    /// <param name="procedureTypes">Тип отчетов</param>
+    /// <param name="limit"></param>
+    /// <param name="offset"></param>
+    /// <returns>Список отчетов в формате <see cref="PageData{Report}"/></returns>
+    /// <exception cref="RequestException"></exception>
+    private async Task<PageData<Report>> FindReports(Guid bankruptGuid, string[] procedureTypes, int limit = 500, int offset = 0)
+    {
+        var response =
+            await _httpClient.GetAsync(
+                $"v1/reports?" +
+                $"bankruptGUID={bankruptGuid}&" +
+                $"sort=DatePublish:asc&" +
+                $"limit={limit}&" +
+                $"offset={offset}&" +
+                //ищем только сообщения-маркеры на какой стадии банкротство
+                $"procedureType={string.Join(",", procedureTypes)}");
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new RequestException((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+        var responseContent = await response.Content.ReadFromJsonAsync<PageData<Report>>();
         return responseContent;
     }
 }

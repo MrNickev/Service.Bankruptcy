@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.Common", "Appli
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.Fedresurs", "Application.Fedresurs\Application.Fedresurs.csproj", "{7430CE21-9CF2-4CF1-B8D3-65A9DA4EBFA5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InfrastructureLayer", "InfrastructureLayer\InfrastructureLayer.csproj", "{816558D6-ECD3-40DA-81C7-34DAEB12A331}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,10 +42,15 @@ Global
 		{7430CE21-9CF2-4CF1-B8D3-65A9DA4EBFA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7430CE21-9CF2-4CF1-B8D3-65A9DA4EBFA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7430CE21-9CF2-4CF1-B8D3-65A9DA4EBFA5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{816558D6-ECD3-40DA-81C7-34DAEB12A331}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{816558D6-ECD3-40DA-81C7-34DAEB12A331}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{816558D6-ECD3-40DA-81C7-34DAEB12A331}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{816558D6-ECD3-40DA-81C7-34DAEB12A331}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4E4C5CF3-2B49-4702-B937-501284BF7A24} = {C9F8528C-9C29-4718-823B-6B0B495FB12F}
 		{EBE047F9-26EC-4117-B31E-86C622F4D5A2} = {FFAD5ACA-DC1B-48AA-A3C9-5A2843EF097B}
 		{7430CE21-9CF2-4CF1-B8D3-65A9DA4EBFA5} = {FFAD5ACA-DC1B-48AA-A3C9-5A2843EF097B}
+		{816558D6-ECD3-40DA-81C7-34DAEB12A331} = {85280CAF-67E0-4D21-B3FF-48109B18455A}
 	EndGlobalSection
 EndGlobal

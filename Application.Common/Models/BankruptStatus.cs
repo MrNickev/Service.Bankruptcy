@@ -20,5 +20,10 @@ public enum BankruptStatus
     /// <summary>
     /// Конченный банкрот - делопроизводство окончено, признан банкротом 
     /// </summary>
-    FinishedBankruptcy
+    FinishedBankruptcy,
+    
+    /// <summary>
+    /// Процедура банкротства окончена не в пользу человека 
+    /// </summary>
+    RefusalBankruptcy
 }
