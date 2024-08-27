@@ -6,6 +6,7 @@ using Application.Common.Models;
 using Application.Fedresurs.Abstractions;
 using Application.Fedresurs.Models;
 using Application.Fedresurs.Models.Configuration;
+using System.Threading.RateLimiting;
 
 namespace Application.Fedresurs.Implementations;
 
@@ -17,6 +18,7 @@ public class FedresursBankruptcyCheckService : IBankruptcyCheckService
     private readonly HttpClient _httpClient;
     private readonly IAuthService _authService;
     private readonly FedresursConfiguration _configuration;
+    private readonly RateLimiter _rateLimiter;
 
     public FedresursBankruptcyCheckService(HttpClient httpClient, IAuthService authService, FedresursConfiguration configuration)
     {
@@ -26,41 +28,45 @@ public class FedresursBankruptcyCheckService : IBankruptcyCheckService
         
         _httpClient = httpClient;
         _httpClient.BaseAddress = new Uri(_configuration.Host);
+        var token = _authService.GetToken();
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Result);
+        
+        _rateLimiter = new SlidingWindowRateLimiter(
+            new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 8,
+                Window = TimeSpan.FromSeconds(1),
+                SegmentsPerWindow = 1,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            });
     }
 
 
     /// <inheritdoc /> 
-    public async Task<BankruptcyCheckResult> Check(BankruptcyCheckRequest request)
+    public async Task<ClientBankruptcyCheckResult> Check(BankruptcyCheckRequest request)
     {
-        var token = await _authService.GetToken();
-        _httpClient.BaseAddress = new Uri(_configuration.Host);
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        
+        //сначала делаем поиск по всем данным которые есть, если ничего не нашли, то пробуем искать отдельно по ИНН и по СНИЛС
+        //имена в нашей базе и базе федресурса могут различаться, поэтому лучше искать по ИНН или СНИЛС - что-то из этого еть всегда
+        var bankrupt = await FindBankrupt(request) ?? 
+                       await FindBankrupt(new BankruptcyCheckRequest() {Type = request.Type, Inn = request.Inn}) ?? 
+                       await FindBankrupt(new BankruptcyCheckRequest() {Type = request.Type, Snils = request.Snils});
 
-        var bankrupts = await FindBankrupts(request);
-        
-        if (bankrupts.Total == 0)
+        if (bankrupt is null)
         {
-            return new BankruptcyCheckResult(BankruptStatus.NotBankrupt, this.GetType().Name);
+            return new ClientBankruptcyCheckResult(request, BankruptStatus.NotBankrupt, GetType().Name);
         }
-        
-        if (bankrupts.Total > 1)
-        {
-            throw new Exception("Найдено несколько людей с такими данными. Уточните запрос используя ИНН..");
-        }
-        //TODO: дополнить нужными типами актов, возможно, пересмотреть логику
-         
-        var bankrupt = bankrupts.Data[0];
+            
         var finishedBankruptcyMessages = await FindMessages(bankrupt.Guid, new []
         {
             "LegalCaseEnd",
             "PropertySaleComplete"
         });
         
+        
         //проверяем есть ли сообщения об окончании банкротства и актуальны ли они
         if (finishedBankruptcyMessages.Total > 0 && finishedBankruptcyMessages.Data.Any(m => m.DatePublish > DateTime.Today.AddYears(-3)))
         {
-            return new BankruptcyCheckResult(BankruptStatus.FinishedBankruptcy, this.GetType().Name); 
+            return new ClientBankruptcyCheckResult(request, BankruptStatus.FinishedBankruptcy, GetType().Name);
         }
 
         
@@ -72,7 +78,7 @@ public class FedresursBankruptcyCheckService : IBankruptcyCheckService
         
         if (refusalBankruptcyMessages.Total > 0 && refusalBankruptcyMessages.Data.Any(m => m.DatePublish > DateTime.Today.AddYears(-3)))
         {
-            return new BankruptcyCheckResult(BankruptStatus.RefusalBankruptcy, this.GetType().Name); 
+            return new ClientBankruptcyCheckResult(request, BankruptStatus.RefusalBankruptcy, GetType().Name);
         }
         
 
@@ -93,37 +99,41 @@ public class FedresursBankruptcyCheckService : IBankruptcyCheckService
 
         if (proceduralBankruptcyMessages.Total > 0 || proceduralBankruptcyReports.Total > 0)
         {
-            return new BankruptcyCheckResult(BankruptStatus.ProceduralBankruptcy, GetType().Name);
+            return new ClientBankruptcyCheckResult(request, BankruptStatus.ProceduralBankruptcy, GetType().Name);
         }
 
-        return new BankruptcyCheckResult(BankruptStatus.NotBankrupt, GetType().Name);
+        return new ClientBankruptcyCheckResult(request, BankruptStatus.NotBankrupt, GetType().Name);
     }
-    
+
+
     /// <summary>
     /// Поиск банкрота 
     /// </summary>
-    /// <param name="request">Объект параметров банкрота</param>
+    /// <param name="bankrupt">Объект параметров банкрота</param>
     /// <returns>Список банкоротов (в идеале 1), найденных по входным параметрам</returns>
-    private async Task<PageData<Bankrupt<Person>>> FindBankrupts(BankruptcyCheckRequest request)
+    private async Task<Bankrupt<Person>?> FindBankrupt(Bankrupt bankrupt)
     {
-        if (request.Limit == 0)
-            request.Limit = 50;
-
         var queryParams = new Dictionary<string, string>();
 
-        var properties = request.GetType().GetProperties();
+        var properties = bankrupt.GetType().GetProperties();
         foreach (var prop in properties)
         {
-            var value = prop.GetValue(request);
-            if (value != null)
+            var value = prop.GetValue(bankrupt);
+            if (value != default)
             {
                 queryParams.Add(prop.Name.ToLower(), value.ToString());
             }
         }
+
+        var requestUri =
+            $"v1/bankrupts?{string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"))}&limit=10&offset=0";
+
+        if (queryParams.Keys.Count < 2)
+            return null;
         
         var response =
              await _httpClient.GetAsync(
-                $"v1/bankrupts?{string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"))}");
+                $"v1/bankrupts?{string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"))}&limit=10&offset=0");
 
         if (!response.IsSuccessStatusCode)
         {
@@ -131,13 +141,32 @@ public class FedresursBankruptcyCheckService : IBankruptcyCheckService
         }
         
         var responseContent = await response.Content.ReadFromJsonAsync<PageData<Bankrupt<Person>>>();
+        
+        if (responseContent.Total == 0)
+        {
+            return null;
+        }
+        
+        if (responseContent.Total > 1)
+        {
+            throw new Exception("Найдено несколько людей с такими данными. Уточните запрос используя ИНН..");
+        }
 
-        return responseContent;
+        return responseContent.Data[0];
     }
+
+    // private async Task<Bankrupt<Person>?> FindBankrupt(string? name = null, string? inn = null, string? snils = null)
+    // {
+    //     var queryParams = new Dictionary<string, string>();
+    //     
+    //     var response =
+    //         await _httpClient.GetAsync(
+    //             $"v1/bankrupts?{name ?? "name=" + name}&limit=10&offset=0");
+    // }
 
 
     /// <summary>
-    /// Найти сообщения по банкроту
+    /// Найти сообщения по банкротам
     /// </summary>
     /// <param name="bankruptGuid">Guid банкрота для которого ведется поиск сообщений</param>
     /// <param name="courtDecisionTypes">Тип судебного акта</param>

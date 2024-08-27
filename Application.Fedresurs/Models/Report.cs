@@ -30,13 +30,13 @@ public class Report
     /// <summary>
     /// Тип отчета
     /// </summary>
-    [Newtonsoft.Json.JsonConverter(typeof(JsonStringEnumConverter))]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public ReportType Type { get; set; }
     
     /// <summary>
     /// Тип процедуры
     /// </summary>
-    [Newtonsoft.Json.JsonConverter(typeof(JsonStringEnumConverter))]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public ProcedureType? ProcedureType { get; set; }
     
     /// <summary>

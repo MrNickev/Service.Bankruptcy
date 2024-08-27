@@ -1,7 +1,6 @@
 ﻿using System.Text.Json.Serialization;
-using Application.Common.Models;
 
-namespace Application.Fedresurs.Models;
+namespace Application.Common.Models;
 
 /// <summary>
 /// Результат проверки на банкрота

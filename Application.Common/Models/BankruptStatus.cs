@@ -23,7 +23,7 @@ public enum BankruptStatus
     FinishedBankruptcy,
     
     /// <summary>
-    /// Процедура банкротства окончена не в пользу человека 
+    /// Процедура банкротства окончена не в пользу человека, т.е. не признан банкротом 
     /// </summary>
     RefusalBankruptcy
 }

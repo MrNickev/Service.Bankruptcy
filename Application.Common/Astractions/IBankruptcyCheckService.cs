@@ -1,5 +1,4 @@
 ﻿using Application.Common.Models;
-using Application.Fedresurs.Models;
 
 namespace Application.Common.Astractions;
 
@@ -13,5 +12,12 @@ public interface IBankruptcyCheckService
     /// </summary>
     /// <param name="request"></param>
     /// <returns></returns>
-    public Task<BankruptcyCheckResult> Check(BankruptcyCheckRequest request);
+    public Task<ClientBankruptcyCheckResult> Check(BankruptcyCheckRequest request);
+    
+    /// <summary>
+    /// Проверка на банкротство для множества клиентов
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    // public Task<List<ClientBankruptcyCheckResult>> Check(List<BankruptcyCheckRequest> request);
 }

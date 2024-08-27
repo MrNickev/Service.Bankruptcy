@@ -18,6 +18,6 @@ public class FedresursRegisterServices : IRegisterService
     {
         services.RegisterConfiguration<FedresursConfiguration>();
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IBankruptcyCheckService, FedresursBankruptcyCheckService>();
+        services.AddSingleton<IBankruptcyCheckService, FedresursBankruptcyCheckService>();
     }
 }
