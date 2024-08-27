@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace Application.Fedresurs.Models.Configuration;
+namespace Application.Fedresurs.Configuration;
 
 /// <summary>
 /// Конфигурация для взаимодействия с API Федресурс
@@ -24,4 +24,10 @@ public class FedresursConfiguration
     /// </summary>
     [JsonProperty(nameof(Host))]
     public string Host { get; set; }
+    
+    /// <summary>
+    /// Адрес Федресурс API
+    /// </summary>
+    [JsonProperty(nameof(RequestsLimitPerSecond))]
+    public int RequestsLimitPerSecond { get; set; }
 }

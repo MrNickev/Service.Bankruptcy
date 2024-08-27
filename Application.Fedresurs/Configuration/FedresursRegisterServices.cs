@@ -1,8 +1,8 @@
-﻿using Application.Common;
-using Application.Common.Astractions;
+﻿using Application.Common.Astractions;
 using Application.Fedresurs.Abstractions;
 using Application.Fedresurs.Implementations;
 using Application.Fedresurs.Models.Configuration;
+using InfrastructureLayer.Configuration;
 using InfrastructureLayer.Configuration.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,7 +17,8 @@ public class FedresursRegisterServices : IRegisterService
     public void Register(IServiceCollection services)
     {
         services.RegisterConfiguration<FedresursConfiguration>();
-        services.AddScoped<IAuthService, AuthService>();
-        services.AddSingleton<IBankruptcyCheckService, FedresursBankruptcyCheckService>();
+        services.AddSingleton<IAuthService, AuthService>();
+        services.AddSingleton<IApiProvider, FedresursApiProvider>();
+        services.AddScoped<IBankruptcyCheckService, FedresursBankruptcyCheckService>();
     }
 }

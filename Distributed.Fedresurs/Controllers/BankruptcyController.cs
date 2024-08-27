@@ -91,7 +91,7 @@ public class BankruptcyController(IEnumerable<IBankruptcyCheckService> bankruptc
                 return StatusCode(((RequestException)e).StatusCode, "Ошибка запроса на сторонний сервис:" + e.Message);
             }
         
-            return StatusCode(500, e.Message);
+            return StatusCode(500, e.Message + e.InnerException?.Message);
         }
         
     }

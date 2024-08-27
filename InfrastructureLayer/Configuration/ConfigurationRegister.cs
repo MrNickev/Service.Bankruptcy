@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+
 using System.Runtime.Loader;
 using InfrastructureLayer.Configuration.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,13 +7,13 @@ using Newtonsoft.Json;
 
 namespace InfrastructureLayer.Configuration;
 
-public static class ConfigurationServicesRegister
+public static class ConfigurationRegister
 {
     private const string AppsettingsName = "appsettings.json";
 
     public static void RegisterConfiguration<TModel>(this IServiceCollection services) where TModel : class
     {
-        services.AddScoped<TModel>(_ => RegisterConfiguration<TModel>());
+        services.AddSingleton<TModel>(_ => RegisterConfiguration<TModel>());
     }
 
     public static TModel RegisterConfiguration<TModel>() where TModel : class
@@ -62,9 +63,14 @@ public static class ConfigurationServicesRegister
             }
         }
 
-        var registerServicesTypes = assemblies.SelectMany(assembly => assembly.GetTypes())
-            .Where(type => typeof(IRegisterService).IsAssignableFrom(type) &&
-                           type is { IsClass: true, IsAbstract: false });
+        //убираем системные зависимости
+        var filteredAssembly = assemblies.Where(assembly =>
+            !assembly.FullName.Contains("Microsoft") && !assembly.FullName.Contains("System"));
+        
+        var registerServicesTypes = filteredAssembly.SelectMany(assembly => assembly.GetTypes())
+            .Where(type => 
+                type.IsClass && !type.IsAbstract &&
+                typeof(IRegisterService).IsAssignableFrom(type));
 
         foreach (var type in registerServicesTypes)
         {

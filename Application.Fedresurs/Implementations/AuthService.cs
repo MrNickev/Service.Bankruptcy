@@ -2,6 +2,7 @@
 using System.Text;
 using Application.Common.Exceptions;
 using Application.Fedresurs.Abstractions;
+using Application.Fedresurs.Configuration;
 using Application.Fedresurs.Models;
 using Application.Fedresurs.Models.Configuration;
 using Microsoft.Extensions.Caching.Memory;
