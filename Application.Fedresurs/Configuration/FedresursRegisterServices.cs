@@ -1,7 +1,8 @@
-﻿using Application.Common.Astractions;
+﻿using System.Threading.RateLimiting;
+using Application.Common.Astractions;
+using Application.Common.Handlers;
 using Application.Fedresurs.Abstractions;
-using Application.Fedresurs.Implementations;
-using Application.Fedresurs.Models.Configuration;
+using Application.Fedresurs.Services;
 using InfrastructureLayer.Configuration;
 using InfrastructureLayer.Configuration.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,8 +18,27 @@ public class FedresursRegisterServices : IRegisterService
     public void Register(IServiceCollection services)
     {
         services.RegisterConfiguration<FedresursConfiguration>();
-        services.AddSingleton<IAuthService, AuthService>();
-        services.AddSingleton<IApiProvider, FedresursApiProvider>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IApiProvider, FedresursApiProvider>();
         services.AddScoped<IBankruptcyCheckService, FedresursBankruptcyCheckService>();
+        
+        
+        var fedresursConfig = ConfigurationRegister.RegisterConfiguration<FedresursConfiguration>();
+        services.AddSingleton(new ClientSideLimitedHandler(new SlidingWindowRateLimiter(
+            new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = fedresursConfig.RequestsLimitPerSecond,
+                Window = TimeSpan.FromSeconds(1),
+                SegmentsPerWindow = 1,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 50
+            }
+        )));
+        
+        services.AddHttpClient("fedresursClient", c =>
+            {
+                c.BaseAddress = new Uri(fedresursConfig.Host);
+            })
+            .ConfigurePrimaryHttpMessageHandler<ClientSideLimitedHandler>();
     }
 }

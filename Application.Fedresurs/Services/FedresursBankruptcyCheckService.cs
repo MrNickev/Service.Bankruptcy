@@ -1,22 +1,14 @@
-﻿using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using Application.Common.Astractions;
-using Application.Common.Exceptions;
+﻿using Application.Common.Astractions;
 using Application.Common.Models;
 using Application.Fedresurs.Abstractions;
-using Application.Fedresurs.Models;
-using Application.Fedresurs.Models.Configuration;
-using System.Threading.RateLimiting;
 
-namespace Application.Fedresurs.Implementations;
+namespace Application.Fedresurs.Services;
 
 /// <summary>
 /// Сервис проверки на банкротство через API Федресурса
 /// </summary>
 public class FedresursBankruptcyCheckService(IApiProvider apiProvider) : IBankruptcyCheckService
 {
-
-
     /// <inheritdoc /> 
     public async Task<ClientBankruptcyCheckResult> Check(BankruptcyCheckRequest request)
     {
