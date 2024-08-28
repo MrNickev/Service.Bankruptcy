@@ -8,3 +8,7 @@
 /Application.Fedresurs/bin
 /InfrastructureLayer/obj
 /InfrastructureLayer/bin
+/Startup/obj
+/Startup/bin
+Startup/appsettings.json
+Startup/appsettings.Development.json
